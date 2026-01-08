@@ -83,6 +83,8 @@ public class SolverCP {
                 model.addDifferent(deg[r][c], 1);
             }
         }
+
+        // missing single loop constraint
     }
 
     public void solve(){
