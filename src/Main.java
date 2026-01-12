@@ -2,7 +2,7 @@ import java.io.*;
 
 public class Main {
     public static void main(String[] args) throws Exception{
-        BufferedReader br = new BufferedReader(new FileReader("instances/janko/Janko011.txt"));
+        BufferedReader br = new BufferedReader(new FileReader("instances/janko/Janko316.txt"));
         String[] s = br.readLine().trim().split("\\s+");
         int h = Integer.parseInt(s[0]);
         int w = Integer.parseInt(s[1]);
@@ -22,16 +22,16 @@ public class Main {
         }
 
         Slitherlink slither = new Slitherlink(h, w, clue);
-        SolverDFS solver = new SolverDFS(slither);
+        SolverCP solver = new SolverCP(slither);
         long start = System.currentTimeMillis();
         solver.solve();
         long end = System.currentTimeMillis();
 
-        if (slither.solved) {
+        /*if (slither.solved) {
             System.out.println("Solved in " + (end - start) + " ms");
             slither.print();
         } else {
             System.out.println("No solution.");
-        }
+        }*/
     }
 }

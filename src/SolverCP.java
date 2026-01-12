@@ -5,22 +5,125 @@ import com.google.ortools.sat.CpSolverStatus;
 import com.google.ortools.sat.BoolVar;
 import com.google.ortools.sat.IntVar;
 import com.google.ortools.sat.LinearExpr;
+import com.google.ortools.sat.CpSolverSolutionCallback;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class SolverCP {
 
+    public class SolutionPrinter extends CpSolverSolutionCallback {
+        private final BoolVar[][] h;
+        private final BoolVar[][] v;
+
+        private int solutionCount = 0;
+
+        public SolutionPrinter(BoolVar[][] h,  BoolVar[][] v) {
+            this.h = h;
+            this.v = v;
+
+        }
+
+        @Override
+        public void onSolutionCallback() {
+            solutionCount++;
+
+            visited = new boolean[puzzle.h + 1][puzzle.w + 1];
+
+            // Copy solver values into puzzle
+            for (int r = 0; r <= puzzle.h; r++) {
+                for (int c = 0; c < puzzle.w; c++) {
+                    puzzle.setHoriz(r, c, value(h[r][c]) == 1);
+                }
+            }
+
+            for (int r = 0; r < puzzle.h; r++) {
+                for (int c = 0; c <= puzzle.w; c++) {
+                    puzzle.setVert(r, c, value(v[r][c]) == 1);
+                }
+            }
+
+            int loops = loopCount();
+            if (loops == 1){
+                puzzle.print();
+                stopSearch();
+            }
+
+        }
+    }
+
     final Slitherlink puzzle;
     final CpModel model;
     BoolVar[][] horiz;
     BoolVar[][] vert;
     IntVar[][] deg;
+    boolean[][] visited;
 
-    public SolverCP(Slitherlink puzzle, CpModel model) {
+    public SolverCP(Slitherlink puzzle) {
         Loader.loadNativeLibraries();
         this.puzzle = puzzle;
-        this.model = model;
+        this.model = new CpModel();
+
+    }
+
+    // helper function for traversing loops and marking vertices as visited
+    public void traverse(int r, int c){
+        int nr = r;
+        int nc = c;
+        int prevR = r;
+        int prevC = c;
+        if (puzzle.horiz[r][c]) {nc = c + 1;} else {nr = r + 1;}
+
+        while (nr != r || nc != c){
+            visited[nr][nc] = true;
+            if (nc < puzzle.w)
+                if (puzzle.horiz[nr][nc])
+                    if (nc + 1 != prevC) {
+                        prevR = nr;
+                        prevC = nc;
+                        nc = nc + 1;
+                        continue;
+                    }
+            if (nr < puzzle.h)
+                if (puzzle.vert[nr][nc])
+                    if (nr + 1 != prevR) {
+                        prevR = nr;
+                        prevC = nc;
+                        nr = nr + 1;
+                        continue;
+                    }
+            if (nc > 0)
+                if (puzzle.horiz[nr][nc - 1])
+                    if(nc - 1 != prevC) {
+                        prevR = nr;
+                        prevC = nc;
+                        nc = nc - 1;
+                        continue;
+                    }
+            if (nr > 0)
+                if (puzzle.vert[nr - 1][nc])
+                    if (nr - 1 != prevR) {
+                        prevR = nr;
+                        prevC = nc;
+                        nr = nr - 1;
+                    }
+
+        }
+    }
+
+    // helper function to count loops
+    public int loopCount(){
+        int loopCount = 0;
+        for (int r = 0; r <= puzzle.h; r++){
+            for (int c = 0; c <= puzzle.w; c++){
+                if (puzzle.degree[r][c] == 2 && !visited[r][c]){
+                    visited[r][c] = true;
+                    loopCount++;
+                    traverse(r, c);
+                }
+            }
+        }
+        return loopCount;
     }
 
     public void buildModel(){
@@ -84,16 +187,22 @@ public class SolverCP {
             }
         }
 
-        // missing single loop constraint
     }
 
     public void solve(){
         buildModel();
 
         CpSolver solver = new CpSolver();
-        CpSolverStatus status = solver.solve(model);
+        solver.getParameters().setEnumerateAllSolutions(true);
 
-        if (status == CpSolverStatus.OPTIMAL || status == CpSolverStatus.FEASIBLE){
+        SolutionPrinter cb = new SolutionPrinter(horiz, vert);
+
+        CpSolverStatus status = solver.solve(model, cb);
+
+        System.out.println("  solutions : " + cb.solutionCount);
+        System.out.println("  wall time : " + solver.wallTime() + " s");
+
+        /*if (status == CpSolverStatus.OPTIMAL || status == CpSolverStatus.FEASIBLE){
 
             for (int r = 0; r <= puzzle.h; r++) {
                 for (int c = 0; c < puzzle.w; c++) {
@@ -110,11 +219,9 @@ public class SolverCP {
             }
 
             puzzle.solved = true;
-            return;
+            System.out.println("Wall Time : " + solver.wallTime()*1000 + " ms");
         } else {
             puzzle.solved = false;
-
-            return;
-        }
+        }*/
     }
 }
