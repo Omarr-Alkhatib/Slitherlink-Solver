@@ -1,56 +1,11 @@
 import com.google.ortools.Loader;
-import com.google.ortools.sat.CpModel;
-import com.google.ortools.sat.CpSolver;
-import com.google.ortools.sat.CpSolverStatus;
-import com.google.ortools.sat.BoolVar;
-import com.google.ortools.sat.IntVar;
-import com.google.ortools.sat.LinearExpr;
-import com.google.ortools.sat.CpSolverSolutionCallback;
+import com.google.ortools.sat.*;
+
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class SolverCP {
-
-    public class SolutionPrinter extends CpSolverSolutionCallback {
-        private final BoolVar[][] h;
-        private final BoolVar[][] v;
-
-        private int solutionCount = 0;
-
-        public SolutionPrinter(BoolVar[][] h,  BoolVar[][] v) {
-            this.h = h;
-            this.v = v;
-
-        }
-
-        @Override
-        public void onSolutionCallback() {
-            solutionCount++;
-
-            visited = new boolean[puzzle.h + 1][puzzle.w + 1];
-
-            // Copy solver values into puzzle
-            for (int r = 0; r <= puzzle.h; r++) {
-                for (int c = 0; c < puzzle.w; c++) {
-                    puzzle.setHoriz(r, c, value(h[r][c]) == 1);
-                }
-            }
-
-            for (int r = 0; r < puzzle.h; r++) {
-                for (int c = 0; c <= puzzle.w; c++) {
-                    puzzle.setVert(r, c, value(v[r][c]) == 1);
-                }
-            }
-
-            int loops = loopCount();
-            if (loops == 1){
-                puzzle.print();
-                stopSearch();
-            }
-
-        }
-    }
+public class SolverCPLazyAllLoops {
 
     final Slitherlink puzzle;
     final CpModel model;
@@ -58,27 +13,36 @@ public class SolverCP {
     BoolVar[][] vert;
     IntVar[][] deg;
     boolean[][] visited;
+    List<BoolVar> loopEdges;
 
-    public SolverCP(Slitherlink puzzle) {
+    public SolverCPLazyAllLoops(Slitherlink puzzle) {
         Loader.loadNativeLibraries();
         this.puzzle = puzzle;
         this.model = new CpModel();
-
+        loopEdges = new ArrayList<>();
     }
 
     // helper function for traversing loops and marking vertices as visited
-    public void traverse(int r, int c){
+    public List<BoolVar> traverse(int r, int c){
         int nr = r;
         int nc = c;
         int prevR = r;
         int prevC = c;
-        if (puzzle.horiz[r][c]) {nc = c + 1;} else {nr = r + 1;}
+
+        if (puzzle.horiz[r][c]) {
+            nc = c + 1;
+            loopEdges.add(horiz[r][c]);
+        } else {
+            nr = r + 1;
+            loopEdges.add(vert[r][c]);
+        }
 
         while (nr != r || nc != c){
             visited[nr][nc] = true;
             if (nc < puzzle.w)
                 if (puzzle.horiz[nr][nc])
                     if (nc + 1 != prevC) {
+                        loopEdges.add(horiz[nr][nc]);
                         prevR = nr;
                         prevC = nc;
                         nc = nc + 1;
@@ -87,6 +51,7 @@ public class SolverCP {
             if (nr < puzzle.h)
                 if (puzzle.vert[nr][nc])
                     if (nr + 1 != prevR) {
+                        loopEdges.add(vert[nr][nc]);
                         prevR = nr;
                         prevC = nc;
                         nr = nr + 1;
@@ -95,6 +60,7 @@ public class SolverCP {
             if (nc > 0)
                 if (puzzle.horiz[nr][nc - 1])
                     if(nc - 1 != prevC) {
+                        loopEdges.add(horiz[nr][nc - 1]);
                         prevR = nr;
                         prevC = nc;
                         nc = nc - 1;
@@ -103,27 +69,32 @@ public class SolverCP {
             if (nr > 0)
                 if (puzzle.vert[nr - 1][nc])
                     if (nr - 1 != prevR) {
+                        loopEdges.add(vert[nr - 1][nc]);
                         prevR = nr;
                         prevC = nc;
                         nr = nr - 1;
                     }
 
         }
+        return loopEdges;
     }
 
     // helper function to count loops
-    public int loopCount(){
+    public boolean loopCount(){
+        visited = new boolean[puzzle.h+1][puzzle.w+1];
         int loopCount = 0;
         for (int r = 0; r <= puzzle.h; r++){
             for (int c = 0; c <= puzzle.w; c++){
                 if (puzzle.degree[r][c] == 2 && !visited[r][c]){
                     visited[r][c] = true;
                     loopCount++;
-                    traverse(r, c);
+                    loopEdges.clear();
+                    loopEdges = traverse(r, c);
+                    model.addLessThan(LinearExpr.sum(loopEdges.toArray(new BoolVar[0])), loopEdges.size());
                 }
             }
         }
-        return loopCount;
+        return loopCount == 1;
     }
 
     public void buildModel(){
@@ -192,17 +163,16 @@ public class SolverCP {
     public void solve(){
         buildModel();
 
-        CpSolver solver = new CpSolver();
-        solver.getParameters().setEnumerateAllSolutions(true);
+        double wallTime = 0;
 
-        SolutionPrinter cb = new SolutionPrinter(horiz, vert);
+        while (true){
+            CpSolver solver = new CpSolver();
+            CpSolverStatus status = solver.solve(model);
 
-        CpSolverStatus status = solver.solve(model, cb);
-
-        System.out.println("  solutions : " + cb.solutionCount);
-        System.out.println("  wall time : " + solver.wallTime() + " s");
-
-        /*if (status == CpSolverStatus.OPTIMAL || status == CpSolverStatus.FEASIBLE){
+            if (status != CpSolverStatus.OPTIMAL && status != CpSolverStatus.FEASIBLE){
+                System.out.println("No Solution");
+                return;
+            }
 
             for (int r = 0; r <= puzzle.h; r++) {
                 for (int c = 0; c < puzzle.w; c++) {
@@ -218,10 +188,15 @@ public class SolverCP {
                 }
             }
 
-            puzzle.solved = true;
-            System.out.println("Wall Time : " + solver.wallTime()*1000 + " ms");
-        } else {
-            puzzle.solved = false;
-        }*/
+            puzzle.print();
+
+
+            wallTime+= solver.wallTime();
+
+            if (loopCount()) {
+                System.out.println("  wall time : " + wallTime + " s");
+                return;
+            }
+        }
     }
 }

@@ -2,12 +2,12 @@ import java.io.*;
 
 public class Main {
     public static void main(String[] args) throws Exception{
-        BufferedReader br = new BufferedReader(new FileReader("instances/janko/Janko316.txt"));
+        BufferedReader br = new BufferedReader(new FileReader("instances/janko/Janko690.txt"));
         String[] s = br.readLine().trim().split("\\s+");
         int h = Integer.parseInt(s[0]);
         int w = Integer.parseInt(s[1]);
-
         int[][] clue = new int[h][w];
+
         for(int i=0;i<h;i++){
             String[] tok = br.readLine().trim().split("\\s+");
             for(int j=0;j<w;j++){
@@ -22,10 +22,11 @@ public class Main {
         }
 
         Slitherlink slither = new Slitherlink(h, w, clue);
-        SolverCP solver = new SolverCP(slither);
+        SolverCPLazyAllLoops solver = new SolverCPLazyAllLoops(slither);
         long start = System.currentTimeMillis();
         solver.solve();
         long end = System.currentTimeMillis();
+        System.out.println("Solved in " + (end - start) + " ms");
 
         /*if (slither.solved) {
             System.out.println("Solved in " + (end - start) + " ms");
