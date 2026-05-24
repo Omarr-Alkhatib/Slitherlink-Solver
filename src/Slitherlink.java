@@ -87,9 +87,6 @@ public class Slitherlink {
         this.contradictionVertex = that.contradictionVertex;
     }
 
-    boolean inside(int r, int c) {
-        return 0 <= r && r <= h && 0 <= c && c <= w;
-    }
 
     public boolean setHoriz(int r, int c, Edge val) {
         if (horiz[r][c] == val) return false;
@@ -151,22 +148,6 @@ public class Slitherlink {
             }
         }
         return true;
-    }
-
-    boolean singleLoop(){
-        boolean atLeastOneCell = false;
-        for (int r = 0; r <= h; r++) {
-            for (int c = 0; c <= w; c++) {
-                if (degree[r][c] != 0 && degree[r][c] != 2){
-                    return false;
-                } else {
-                    if (degree[r][c] == 2){
-                        atLeastOneCell = true;
-                    }
-                }
-            }
-        }
-        return atLeastOneCell;
     }
 
     public boolean isSolved() {
