@@ -20,12 +20,12 @@ public class SolverDFS {
         nr = r - 1;
         nc = c;
         if (puzzle.inside(nr, nc))
-            if (!puzzle.vert[nr][nc])
+            if (puzzle.vert[nr][nc] != Slitherlink.Edge.ON)
                 if (puzzle.degree[nr][nc] < 2){
-                    puzzle.setVert(nr, nc, true);
+                    puzzle.setVert(nr, nc, Slitherlink.Edge.ON);
                     dfs(nr, nc);
                     if (puzzle.solved) return;
-                    puzzle.setVert(nr, nc, false);
+                    puzzle.setVert(nr, nc, Slitherlink.Edge.UNKNOWN);
                 }
 
 
@@ -34,12 +34,12 @@ public class SolverDFS {
         nr = r;
         nc = c + 1;
         if (puzzle.inside(nr, nc))
-            if (!puzzle.horiz[r][c])
+            if (puzzle.horiz[r][c] != Slitherlink.Edge.ON)
                 if (puzzle.degree[nr][nc] < 2){
-                    puzzle.setHoriz(r, c, true);
+                    puzzle.setHoriz(r, c, Slitherlink.Edge.ON);
                     dfs(nr, nc);
                     if (puzzle.solved) return;
-                    puzzle.setHoriz(r, c, false);
+                    puzzle.setHoriz(r, c, Slitherlink.Edge.UNKNOWN);
                 }
 
 
@@ -48,12 +48,12 @@ public class SolverDFS {
         nr = r + 1;
         nc = c;
         if (puzzle.inside(nr, nc))
-            if (!puzzle.vert[r][c])
+            if (puzzle.vert[r][c] != Slitherlink.Edge.ON)
                 if (puzzle.degree[nr][nc] < 2){
-                    puzzle.setVert(r, c, true);
+                    puzzle.setVert(r, c, Slitherlink.Edge.ON);
                     dfs(nr, nc);
                     if (puzzle.solved) return;
-                    puzzle.setVert(r, c, false);
+                    puzzle.setVert(r, c, Slitherlink.Edge.UNKNOWN);
                 }
 
 
@@ -62,12 +62,12 @@ public class SolverDFS {
         nr = r;
         nc = c - 1;
         if (puzzle.inside(nr, nc))
-            if (!puzzle.horiz[nr][nc])
+            if (puzzle.horiz[nr][nc] != Slitherlink.Edge.ON)
                 if (puzzle.degree[nr][nc] < 2){
-                    puzzle.setHoriz(nr, nc, true);
+                    puzzle.setHoriz(nr, nc, Slitherlink.Edge.ON);
                     dfs(nr, nc);
                     if (puzzle.solved) return;
-                    puzzle.setHoriz(nr, nc, false);
+                    puzzle.setHoriz(nr, nc, Slitherlink.Edge.UNKNOWN);
                 }
     }
 

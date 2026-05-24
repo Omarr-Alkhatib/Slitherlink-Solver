@@ -33,18 +33,24 @@ public class SolverCPVerifier {
             // Copy solver values into puzzle
             for (int r = 0; r <= puzzle.h; r++) {
                 for (int c = 0; c < puzzle.w; c++) {
-                    puzzle.setHoriz(r, c, value(h[r][c]) == 1);
+                    if (value(h[r][c]) == 1) puzzle.setHoriz(r, c, Slitherlink.Edge.ON);
+                    else puzzle.setHoriz(r, c, Slitherlink.Edge.UNKNOWN);
                 }
             }
 
             for (int r = 0; r < puzzle.h; r++) {
                 for (int c = 0; c <= puzzle.w; c++) {
-                    puzzle.setVert(r, c, value(v[r][c]) == 1);
+                    if (value(v[r][c]) == 1) puzzle.setVert(r, c, Slitherlink.Edge.ON);
+                    else puzzle.setVert(r, c, Slitherlink.Edge.UNKNOWN);
                 }
             }
 
+            int loops = loopCount();
+            if (loops == 1){
+                stopSearch();
+            }
             puzzle.print();
-
+            System.out.println("****************************************");
 
         }
     }
@@ -69,12 +75,12 @@ public class SolverCPVerifier {
         int nc = c;
         int prevR = r;
         int prevC = c;
-        if (puzzle.horiz[r][c]) {nc = c + 1;} else {nr = r + 1;}
+        if (puzzle.horiz[r][c] == Slitherlink.Edge.ON) {nc = c + 1;} else {nr = r + 1;}
 
         while (nr != r || nc != c){
             visited[nr][nc] = true;
             if (nc < puzzle.w)
-                if (puzzle.horiz[nr][nc])
+                if (puzzle.horiz[nr][nc] == Slitherlink.Edge.ON)
                     if (nc + 1 != prevC) {
                         prevR = nr;
                         prevC = nc;
@@ -82,7 +88,7 @@ public class SolverCPVerifier {
                         continue;
                     }
             if (nr < puzzle.h)
-                if (puzzle.vert[nr][nc])
+                if (puzzle.vert[nr][nc] == Slitherlink.Edge.ON)
                     if (nr + 1 != prevR) {
                         prevR = nr;
                         prevC = nc;
@@ -90,7 +96,7 @@ public class SolverCPVerifier {
                         continue;
                     }
             if (nc > 0)
-                if (puzzle.horiz[nr][nc - 1])
+                if (puzzle.horiz[nr][nc - 1] == Slitherlink.Edge.ON)
                     if(nc - 1 != prevC) {
                         prevR = nr;
                         prevC = nc;
@@ -98,7 +104,7 @@ public class SolverCPVerifier {
                         continue;
                     }
             if (nr > 0)
-                if (puzzle.vert[nr - 1][nc])
+                if (puzzle.vert[nr - 1][nc] == Slitherlink.Edge.ON)
                     if (nr - 1 != prevR) {
                         prevR = nr;
                         prevC = nc;

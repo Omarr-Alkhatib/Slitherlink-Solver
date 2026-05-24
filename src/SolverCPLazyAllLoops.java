@@ -29,7 +29,7 @@ public class SolverCPLazyAllLoops {
         int prevR = r;
         int prevC = c;
 
-        if (puzzle.horiz[r][c]) {
+        if (puzzle.horiz[r][c] == Slitherlink.Edge.ON) {
             nc = c + 1;
             loopEdges.add(horiz[r][c]);
         } else {
@@ -40,7 +40,7 @@ public class SolverCPLazyAllLoops {
         while (nr != r || nc != c){
             visited[nr][nc] = true;
             if (nc < puzzle.w)
-                if (puzzle.horiz[nr][nc])
+                if (puzzle.horiz[nr][nc] == Slitherlink.Edge.ON)
                     if (nc + 1 != prevC) {
                         loopEdges.add(horiz[nr][nc]);
                         prevR = nr;
@@ -49,7 +49,7 @@ public class SolverCPLazyAllLoops {
                         continue;
                     }
             if (nr < puzzle.h)
-                if (puzzle.vert[nr][nc])
+                if (puzzle.vert[nr][nc] == Slitherlink.Edge.ON)
                     if (nr + 1 != prevR) {
                         loopEdges.add(vert[nr][nc]);
                         prevR = nr;
@@ -58,7 +58,7 @@ public class SolverCPLazyAllLoops {
                         continue;
                     }
             if (nc > 0)
-                if (puzzle.horiz[nr][nc - 1])
+                if (puzzle.horiz[nr][nc - 1] == Slitherlink.Edge.ON)
                     if(nc - 1 != prevC) {
                         loopEdges.add(horiz[nr][nc - 1]);
                         prevR = nr;
@@ -67,7 +67,7 @@ public class SolverCPLazyAllLoops {
                         continue;
                     }
             if (nr > 0)
-                if (puzzle.vert[nr - 1][nc])
+                if (puzzle.vert[nr - 1][nc] == Slitherlink.Edge.ON)
                     if (nr - 1 != prevR) {
                         loopEdges.add(vert[nr - 1][nc]);
                         prevR = nr;
@@ -177,19 +177,21 @@ public class SolverCPLazyAllLoops {
             for (int r = 0; r <= puzzle.h; r++) {
                 for (int c = 0; c < puzzle.w; c++) {
                     boolean value = solver.booleanValue(horiz[r][c]);
-                    puzzle.setHoriz(r, c, value);
+                    if (value) puzzle.setHoriz(r, c, Slitherlink.Edge.ON);
+                    else puzzle.setHoriz(r, c, Slitherlink.Edge.UNKNOWN);
                 }
             }
 
             for (int r = 0; r < puzzle.h; r++) {
                 for (int c = 0; c <= puzzle.w; c++) {
                     boolean value = solver.booleanValue(vert[r][c]);
-                    puzzle.setVert(r, c, value);
+                    if (value) puzzle.setVert(r, c, Slitherlink.Edge.ON);
+                    else puzzle.setVert(r, c, Slitherlink.Edge.UNKNOWN);
                 }
             }
 
             puzzle.print();
-
+            System.out.println("****************************************");
 
             wallTime+= solver.wallTime();
 
