@@ -1,5 +1,7 @@
 public class SolverDS {
 
+    // all print statements are commented out for better performance measurement.
+
     public static class Metrics {
         int S;
         int V;
@@ -289,15 +291,15 @@ public class SolverDS {
             //puzzle.print();
             System.out.println("Puzzle solved \n");
 
-            System.out.println("S0 = " + S[0]);
+            /*System.out.println("S0 = " + S[0]);
             System.out.println("S1 = " + S[1]);
             System.out.println("V1 = " + V[1]);
             System.out.println("A1 = " + A[1]);
             System.out.println("S2 = " + S[2]);
             System.out.println("V2 = " + V[2]);
             System.out.println("A2 = " + A[2]);
-            System.out.println("Variables: " + (S[0] + S[1] + S[2] + V[0] + V[1] + V[2] + A[0] + A[1] + A[2]));
-            System.out.println("Difficulty: " + difficulty);
+            System.out.println("Variables: " + (S[0] + S[1] + S[2] + V[0] + V[1] + V[2] + A[0] + A[1] + A[2]));*/
+            //System.out.println("Difficulty: " + difficulty);
 
         } else {
             //puzzle.print();

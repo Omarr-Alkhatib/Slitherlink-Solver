@@ -178,7 +178,7 @@ public class Slitherlink {
         return changes;
     }
 
-    // generated with Chatgpt
+    // generated with AI
     public void print() {
         int R = 2 * h + 1;
         int C = 2 * w + 1;
