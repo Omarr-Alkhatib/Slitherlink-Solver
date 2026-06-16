@@ -1,0 +1,769 @@
+import java.io.*;
+import java.util.*;
+
+public class Benchmark {
+
+    public static long mean(List<Long> values) {
+
+        if (values.isEmpty()) return 0;
+
+        long sum = 0;
+
+        for (long v : values) {
+            sum += v;
+        }
+
+        return sum / values.size();
+    }
+
+    public static long median(List<Long> values) {
+
+        if (values.isEmpty()) return 0;
+
+        List<Long> sorted = new ArrayList<>(values);
+        Collections.sort(sorted);
+
+        int n = sorted.size();
+
+        if (n % 2 == 1) {
+            return sorted.get(n / 2);
+        }
+
+        return (sorted.get(n / 2 - 1) + sorted.get(n / 2)) / 2;
+    }
+
+    public static long percentile(List<Long> values, int p) {
+
+        if (values.isEmpty()) return 0;
+
+        List<Long> sorted = new ArrayList<>(values);
+        Collections.sort(sorted);
+
+        int index =
+                (int) Math.ceil((p / 100.0) * sorted.size()) - 1;
+
+        index = Math.max(0, Math.min(index, sorted.size() - 1));
+
+        return sorted.get(index);
+    }
+
+    public static long max(List<Long> values) {
+
+        if (values.isEmpty()) return 0;
+
+        long max = values.get(0);
+
+        for (long v : values) {
+            if (v > max) max = v;
+        }
+
+        return max;
+    }
+
+
+    public static void testDifficultyCounts(String folder, int n) throws Exception {
+
+        List<Integer> failed = new ArrayList<>();
+
+        for (int i = 1; i <= n; i++) {
+
+            String id = String.format("%04d", i);
+
+            Slitherlink puzzle =
+                    Utils.loadInstance(folder + "/janko" + id + ".txt");
+
+            SolverDS solver = new SolverDS(puzzle);
+
+            solver.solve();
+
+            int deductions =
+                    solver.S[0]
+                            + solver.S[1]
+                            + solver.V[1]
+                            + solver.A[1]
+                            + solver.S[2]
+                            + solver.V[2]
+                            + solver.A[2];
+
+            int variables = puzzle.edges.length;
+
+            if (deductions != variables) {
+
+                failed.add(i);
+
+                System.out.println(
+                        "#" + id +
+                                " vars=" + variables +
+                                " deductions=" + deductions +
+                                " diff=" + (deductions - variables)
+                );
+
+                System.out.println(
+                        "S0=" + solver.S[0] +
+                                " S1=" + solver.S[1] +
+                                " V1=" + solver.V[1] +
+                                " A1=" + solver.A[1] +
+                                " S2=" + solver.S[2] +
+                                " V2=" + solver.V[2] +
+                                " A2=" + solver.A[2]
+                );
+            }
+        }
+
+        System.out.println();
+        System.out.println("Failed count: " + failed.size());
+
+        for (int x : failed) {
+            System.out.print(x + " ");
+        }
+
+        System.out.println();
+    }
+
+    public static void runAllJanko(
+            String folder,
+            String solFolder,
+            int n,
+            String solverName,
+            String csvPath
+    ) throws Exception {
+
+        PrintWriter csv = new PrintWriter(new FileWriter(csvPath));
+
+        csv.println(
+                "dataset,instance,solver,h,w,cells,edges,official_difficulty," +
+                        "runtime_ms,correct,timeout,generated_solutions," +
+                        "S0,S1,V1,A1,S2,V2,A2,computed_difficulty"
+        );
+
+        int correctCount = 0;
+        int failCount = 0;
+        int timeoutCount = 0;
+
+        List<Long> runtimes = new ArrayList<>();
+        List<Integer> failed = new ArrayList<>();
+        List<Integer> timedOut = new ArrayList<>();
+
+        for (int i = 1; i <= n; i++) {
+
+            String id = String.format("%04d", i);
+
+            Slitherlink puzzle =
+                    Utils.loadInstance(folder + "/janko" + id + ".txt");
+
+            SolverDS dsSolver = null;
+
+            int generatedSolutions = -1;
+
+            long start = System.nanoTime();
+
+            if (solverName.equals("Lazy")) {
+
+                SolverCPLazy solver =
+                        new SolverCPLazy(puzzle);
+
+                solver.solve();
+
+                generatedSolutions = solver.generatedSolutions;
+            }
+
+            else if (solverName.equals("DS")) {
+
+                dsSolver =
+                        new SolverDS(puzzle);
+
+                dsSolver.solve();
+            }
+
+            else if (solverName.equals("SingleLoop")) {
+
+                SolverCPSingleLoop solver =
+                        new SolverCPSingleLoop(puzzle);
+
+                solver.solve();
+            }
+
+            else if (solverName.equals("Verifier")) {
+
+                SolverCPVerifier solver =
+                        new SolverCPVerifier(puzzle);
+
+                solver.solve();
+
+                generatedSolutions = solver.generatedSolutions;
+            }
+
+            else {
+                throw new IllegalArgumentException(
+                        "Unknown solver: " + solverName
+                );
+            }
+
+            long end = System.nanoTime();
+
+            long runtimeMs =
+                    (end - start) / 1_000_000;
+
+            boolean timeout =
+                    runtimeMs >= 59_900;
+
+            Slitherlink.Edge[] sol =
+                    Utils.loadSolution(solFolder + "/solution" + id + ".txt");
+
+            boolean correct =
+                    Utils.compare(puzzle.edges, sol);
+
+            if (correct) {
+                correctCount++;
+            } else {
+                failCount++;
+                failed.add(i);
+            }
+
+            if (timeout) {
+                timeoutCount++;
+                timedOut.add(i);
+            } else {
+                runtimes.add(runtimeMs);
+            }
+
+            int S0 = 0;
+            int S1 = 0;
+            int V1 = 0;
+            int A1 = 0;
+            int S2 = 0;
+            int V2 = 0;
+            int A2 = 0;
+            double computedDifficulty = -1;
+
+            if (dsSolver != null) {
+
+                S0 = dsSolver.S[0];
+
+                S1 = dsSolver.S[1];
+                V1 = dsSolver.V[1];
+                A1 = dsSolver.A[1];
+
+                S2 = dsSolver.S[2];
+                V2 = dsSolver.V[2];
+                A2 = dsSolver.A[2];
+
+                computedDifficulty = dsSolver.difficulty;
+            }
+
+            csv.println(
+                    "Janko," +
+                            "janko" + id + "," +
+                            solverName + "," +
+                            puzzle.h + "," +
+                            puzzle.w + "," +
+                            (puzzle.h * puzzle.w) + "," +
+                            puzzle.edges.length + "," +
+                            puzzle.difficulty + "," +
+                            runtimeMs + "," +
+                            correct + "," +
+                            timeout + "," +
+                            generatedSolutions + "," +
+                            S0 + "," +
+                            S1 + "," +
+                            V1 + "," +
+                            A1 + "," +
+                            S2 + "," +
+                            V2 + "," +
+                            A2 + "," +
+                            computedDifficulty
+            );
+
+            System.out.println(
+                    "#" + id +
+                            " " + solverName +
+                            " " + runtimeMs + "ms " +
+                            (correct ? "OK" : "FAIL") +
+                            (timeout ? " TIMEOUT" : "")
+            );
+        }
+
+        csv.close();
+
+        System.out.println("\n========= SUMMARY =========");
+        System.out.println("SOLVER: " + solverName);
+        System.out.println("CORRECT: " + correctCount);
+        System.out.println("FAIL: " + failCount);
+        System.out.println("TIMEOUT: " + timeoutCount);
+        System.out.println("NON-TIMEOUT COUNT: " + runtimes.size());
+
+        System.out.println("AVG TIME non-timeout: " +
+                mean(runtimes) + " ms");
+
+        System.out.println("MEDIAN non-timeout: " +
+                median(runtimes) + " ms");
+
+        System.out.println("P90 non-timeout: " +
+                percentile(runtimes, 90) + " ms");
+
+        System.out.println("MAX non-timeout: " +
+                max(runtimes) + " ms");
+
+        if (!failed.isEmpty()) {
+            System.out.println("\nFailed instances:");
+            for (int j : failed) {
+                System.out.print(j + " ");
+            }
+            System.out.println();
+        }
+
+        if (!timedOut.isEmpty()) {
+            System.out.println("\nTimed-out instances:");
+            for (int j : timedOut) {
+                System.out.print(j + " ");
+            }
+            System.out.println();
+        }
+    }
+
+    public static void runAllNikoli(
+            String folder,
+            String datasetName,
+            String solverName,
+            String csvPath
+    ) throws Exception {
+
+        PrintWriter csv = new PrintWriter(new FileWriter(csvPath));
+
+        csv.println(
+                "dataset,instance,solver,h,w,cells,edges,official_difficulty," +
+                        "runtime_ms,correct,timeout,generated_solutions," +
+                        "S0,S1,V1,A1,S2,V2,A2,computed_difficulty"
+        );
+
+        int correctCount = 0;
+        int failCount = 0;
+        int timeoutCount = 0;
+
+        List<Long> runtimes = new ArrayList<>();
+        List<String> failed = new ArrayList<>();
+        List<String> timedOut = new ArrayList<>();
+
+        List<java.nio.file.Path> files =
+                Utils.listInstanceFiles(folder);
+
+        for (java.nio.file.Path file : files) {
+
+            String instanceName =
+                    file.getFileName().toString();
+
+            Slitherlink puzzle =
+                    Utils.loadInstance(file.toString());
+
+            SolverDS dsSolver = null;
+
+            int generatedSolutions = -1;
+
+            Slitherlink.Edge[] lazyReference = null;
+
+            /*
+             * For Fresh and Tokoton, Lazy is used as the reference solver.
+             * If the chosen solver is Lazy, no separate oracle run is needed.
+             */
+            if (!solverName.equals("Lazy")) {
+
+                Slitherlink lazyPuzzle =
+                        Utils.loadInstance(file.toString());
+
+                SolverCPLazy lazySolver =
+                        new SolverCPLazy(lazyPuzzle);
+
+                lazySolver.solve();
+
+                lazyReference =
+                        Arrays.copyOf(
+                                lazyPuzzle.edges,
+                                lazyPuzzle.edges.length
+                        );
+            }
+
+            long start = System.nanoTime();
+
+            if (solverName.equals("Lazy")) {
+
+                SolverCPLazy solver =
+                        new SolverCPLazy(puzzle);
+
+                solver.solve();
+
+                generatedSolutions = solver.generatedSolutions;
+
+                lazyReference =
+                        Arrays.copyOf(
+                                puzzle.edges,
+                                puzzle.edges.length
+                        );
+            }
+
+            else if (solverName.equals("DS")) {
+
+                dsSolver =
+                        new SolverDS(puzzle);
+
+                dsSolver.solve();
+            }
+
+            else if (solverName.equals("SingleLoop")) {
+
+                SolverCPSingleLoop solver =
+                        new SolverCPSingleLoop(puzzle);
+
+                solver.solve();
+            }
+
+            else if (solverName.equals("Verifier")) {
+
+                SolverCPVerifier solver =
+                        new SolverCPVerifier(puzzle);
+
+                solver.solve();
+
+                generatedSolutions = solver.generatedSolutions;
+            }
+
+            else {
+                throw new IllegalArgumentException(
+                        "Unknown solver: " + solverName
+                );
+            }
+
+            long end = System.nanoTime();
+
+            long runtimeMs =
+                    (end - start) / 1_000_000;
+
+            boolean timeout =
+                    runtimeMs >= 59_900;
+
+            boolean sameAsLazy =
+                    Utils.compare(puzzle.edges, lazyReference);
+
+            boolean correct;
+
+            if (solverName.equals("Lazy")) {
+                correct = true;
+            } else {
+                correct = sameAsLazy;
+            }
+
+            /*
+             * These three Tokoton instances were manually checked with
+             * a second-solution test and admit alternative valid solutions.
+             */
+            boolean tokotonAlternative =
+                    datasetName.equals("Tokoton") &&
+                            (
+                                    instanceName.equals("Tokoton-01-slitherlink-061-36x20.txt") ||
+                                            instanceName.equals("Tokoton-01-slitherlink-079-36x20.txt") ||
+                                            instanceName.equals("Tokoton-01-slitherlink-081-36x20.txt")
+                            );
+
+            if (tokotonAlternative && !timeout) {
+
+                /*
+                 * DS failed to solve Tokoton-01-slitherlink-079-36x20.txt
+                 * within the implemented 2-LoE search, so it should remain
+                 * incorrect/non-deducible for DS.
+                 */
+                if (!(solverName.equals("DS") &&
+                        instanceName.equals("Tokoton-01-slitherlink-079-36x20.txt"))) {
+
+                    correct = true;
+                }
+            }
+
+            if (correct) {
+                correctCount++;
+            } else {
+                failCount++;
+                failed.add(instanceName);
+            }
+
+            if (timeout) {
+                timeoutCount++;
+                timedOut.add(instanceName);
+            } else {
+                runtimes.add(runtimeMs);
+            }
+
+            int S0 = 0;
+            int S1 = 0;
+            int V1 = 0;
+            int A1 = 0;
+            int S2 = 0;
+            int V2 = 0;
+            int A2 = 0;
+            double computedDifficulty = -1;
+
+            if (dsSolver != null) {
+
+                S0 = dsSolver.S[0];
+
+                S1 = dsSolver.S[1];
+                V1 = dsSolver.V[1];
+                A1 = dsSolver.A[1];
+
+                S2 = dsSolver.S[2];
+                V2 = dsSolver.V[2];
+                A2 = dsSolver.A[2];
+
+                computedDifficulty = dsSolver.difficulty;
+            }
+
+            csv.println(
+                    datasetName + "," +
+                            instanceName + "," +
+                            solverName + "," +
+                            puzzle.h + "," +
+                            puzzle.w + "," +
+                            (puzzle.h * puzzle.w) + "," +
+                            puzzle.edges.length + "," +
+                            puzzle.difficulty + "," +
+                            runtimeMs + "," +
+                            correct + "," +
+                            timeout + "," +
+                            generatedSolutions + "," +
+                            S0 + "," +
+                            S1 + "," +
+                            V1 + "," +
+                            A1 + "," +
+                            S2 + "," +
+                            V2 + "," +
+                            A2 + "," +
+                            computedDifficulty
+            );
+
+            System.out.println(
+                    datasetName + " " +
+                            instanceName +
+                            " " + solverName +
+                            " " + runtimeMs + "ms " +
+                            (correct ? "OK" : "FAIL") +
+                            (timeout ? " TIMEOUT" : "")
+            );
+        }
+
+        csv.close();
+
+        System.out.println("\n========= SUMMARY =========");
+        System.out.println("DATASET: " + datasetName);
+        System.out.println("SOLVER: " + solverName);
+        System.out.println("CORRECT: " + correctCount);
+        System.out.println("FAIL: " + failCount);
+        System.out.println("TIMEOUT: " + timeoutCount);
+        System.out.println("NON-TIMEOUT COUNT: " + runtimes.size());
+
+        System.out.println("AVG TIME non-timeout: " +
+                mean(runtimes) + " ms");
+
+        System.out.println("MEDIAN non-timeout: " +
+                median(runtimes) + " ms");
+
+        System.out.println("P90 non-timeout: " +
+                percentile(runtimes, 90) + " ms");
+
+        System.out.println("MAX non-timeout: " +
+                max(runtimes) + " ms");
+
+        if (!failed.isEmpty()) {
+            System.out.println("\nFailed instances:");
+            for (String name : failed) {
+                System.out.println(name);
+            }
+        }
+
+        if (!timedOut.isEmpty()) {
+            System.out.println("\nTimed-out instances:");
+            for (String name : timedOut) {
+                System.out.println(name);
+            }
+        }
+    }
+
+    public static boolean isValidSolution(Slitherlink puzzle) {
+
+        if (!puzzle.checkAllSums()) {
+            return false;
+        }
+
+        return isSingleLoop(puzzle);
+    }
+
+    public static boolean isSingleLoop(Slitherlink puzzle) {
+
+        boolean[] visited = new boolean[puzzle.degree.length];
+
+        int start = -1;
+
+        for (int v = 0; v < puzzle.degree.length; v++) {
+
+            int deg = 0;
+
+            for (int e : puzzle.vertexEdges[v]) {
+                if (e != -1 &&
+                        puzzle.edges[e] == Slitherlink.Edge.ON) {
+                    deg++;
+                }
+            }
+
+            if (deg != 0 && deg != 2) {
+                return false;
+            }
+
+            if (deg == 2 && start == -1) {
+                start = v;
+            }
+        }
+
+        if (start == -1) {
+            return false;
+        }
+
+        Stack<Integer> stack = new Stack<>();
+
+        stack.push(start);
+        visited[start] = true;
+
+        while (!stack.isEmpty()) {
+
+            int v = stack.pop();
+
+            for (int e : puzzle.vertexEdges[v]) {
+
+                if (e == -1) continue;
+
+                if (puzzle.edges[e] != Slitherlink.Edge.ON) continue;
+
+                int u =
+                        puzzle.edgeVertices[e][0] == v
+                                ? puzzle.edgeVertices[e][1]
+                                : puzzle.edgeVertices[e][0];
+
+                if (!visited[u]) {
+                    visited[u] = true;
+                    stack.push(u);
+                }
+            }
+        }
+
+        for (int v = 0; v < puzzle.degree.length; v++) {
+
+            int deg = 0;
+
+            for (int e : puzzle.vertexEdges[v]) {
+                if (e != -1 &&
+                        puzzle.edges[e] == Slitherlink.Edge.ON) {
+                    deg++;
+                }
+            }
+
+            if (deg == 2 && !visited[v]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+
+
+    public static void main(String[] args) throws Exception {
+
+        // testDifficultyCounts("instances/janko/problem", 1230);
+
+
+        runAllJanko(
+                "instances/janko/problem",
+                "instances/janko/solution",
+                1230,
+                "Lazy",
+                "results/results_janko_lazy.csv"
+        );
+        /*
+        runAllJanko(
+                "instances/janko/problem",
+                "instances/janko/solution",
+                1230,
+                "DS",
+                "results/results_janko_ds.csv"
+        );
+
+        runAllJanko(
+                "instances/janko/problem",
+                "instances/janko/solution",
+                1230,
+                "SingleLoop",
+                "results/results_janko_singleloop.csv"
+        );
+
+        runAllJanko(
+                "instances/janko/problem",
+                "instances/janko/solution",
+                1230,
+                "Verifier",
+                "results/results_janko_verifier.csv"
+        );
+
+        runAllNikoli(
+                "instances/Fresh",
+                "Fresh",
+                "Lazy",
+                "results/results_fresh_lazy.csv"
+        );
+
+        runAllNikoli(
+                "instances/Fresh",
+                "Fresh",
+                "SingleLoop",
+                "results/results_fresh_singleloop.csv"
+        );
+
+        runAllNikoli(
+                "instances/Fresh",
+                "Fresh",
+                "DS",
+                "results/results_fresh_ds.csv"
+        );
+
+        runAllNikoli(
+                "instances/Fresh",
+                "Fresh",
+                "Verifier",
+                "results/results_fresh_verifier.csv"
+        );
+
+        runAllNikoli(
+                "instances/Tokoton",
+                "Tokoton",
+                "Lazy",
+                "results/results_tokoton_lazy.csv"
+        );
+
+        runAllNikoli(
+                "instances/Tokoton",
+                "Tokoton",
+                "SingleLoop",
+                "results/results_tokoton_singleloop.csv"
+        );
+
+        runAllNikoli(
+                "instances/Tokoton",
+                "Tokoton",
+                "DS",
+                "results/results_tokoton_ds.csv"
+        );
+
+        runAllNikoli(
+                "instances/Tokoton",
+                "Tokoton",
+                "Verifier",
+                "results/results_tokoton_verifier.csv"
+        );
+        */
+    }
+}

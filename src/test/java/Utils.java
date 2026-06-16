@@ -1,0 +1,137 @@
+import java.io.*;
+import java.nio.file.*;
+import java.util.*;
+
+public class Utils {
+
+    public static List<Path> listInstanceFiles(String folder) throws IOException {
+
+        List<Path> files = new ArrayList<>();
+
+        try (var stream = Files.walk(Paths.get(folder))) {
+
+            stream
+                    .filter(Files::isRegularFile)
+                    .sorted(Comparator.comparing(Path::toString))
+                    .forEach(files::add);
+        }
+
+        return files;
+    }
+
+    // load instance
+    public static Slitherlink loadInstance(String path) throws Exception {
+
+        BufferedReader br = new BufferedReader(new FileReader(path));
+
+        String line;
+        int h = -1;
+        int w = -1;
+        int[] clues = null;
+        double difficulty = -1;
+
+        while ((line = br.readLine()) != null) {
+            line = line.trim();
+            if (line.equals("[size]")) {
+                String[] size = br.readLine().trim().split("\\s+");
+
+                h = Integer.parseInt(size[0]);
+                w = Integer.parseInt(size[1]);
+
+                clues = new int[h * w];
+            }
+
+            else if (line.equals("[cells]")) {
+                for (int r = 0; r < h; r++) {
+                    String[] row = br.readLine().trim().split("\\s+");
+                    for (int c = 0; c < w; c++) {
+                        int i = r * w + c;
+
+                        clues[i] = switch (row[c]) {
+                            case "0" -> 0;
+                            case "1" -> 1;
+                            case "2" -> 2;
+                            case "3" -> 3;
+                            default -> -1;
+                        };
+                    }
+                }
+            }
+
+            else if (line.equals("[difficulty]")) {
+                difficulty = Double.parseDouble(br.readLine().trim());
+            }
+        }
+
+        br.close();
+
+        Slitherlink puzzle = new Slitherlink(h, w, clues);
+        puzzle.difficulty = difficulty;
+
+        return puzzle;
+    }
+
+    // load solution for Janko
+    public static Slitherlink.Edge[] loadSolution(String path) throws Exception {
+        BufferedReader br = new BufferedReader(new FileReader(path));
+
+        String[] hw = br.readLine().trim().split("\\s+");
+        int h = Integer.parseInt(hw[0]);
+        int w = Integer.parseInt(hw[1]);
+
+        char[][] grid = new char[h][w];
+
+        for (int r = 0; r < h; r++) {
+            String[] row = br.readLine().trim().split("\\s+");
+            for (int c = 0; c < w; c++) {
+                grid[r][c] = row[c].charAt(0);
+            }
+        }
+
+        br.close();
+
+        int vEdges = (w + 1) * h;
+        int hEdges = (h + 1) * w;
+
+        Slitherlink.Edge[] edges = new Slitherlink.Edge[vEdges + hEdges];
+        Arrays.fill(edges, Slitherlink.Edge.OFF);
+
+        // vertical edges
+        for (int r = 0; r < h; r++) {
+            for (int c = 0; c <= w; c++) {
+
+                int e = r * (w + 1) + c;
+
+                char left  = (c == 0) ? '-' : grid[r][c - 1];
+                char right = (c == w) ? '-' : grid[r][c];
+
+                if (left != right) {
+                    edges[e] = Slitherlink.Edge.ON;
+                }
+            }
+        }
+
+        // horizontal edges
+        for (int r = 0; r <= h; r++) {
+            for (int c = 0; c < w; c++) {
+
+                int e = vEdges + r * w + c;
+
+                char up   = (r == 0) ? '-' : grid[r - 1][c];
+                char down = (r == h) ? '-' : grid[r][c];
+
+                if (up != down) {
+                    edges[e] = Slitherlink.Edge.ON;
+                }
+            }
+        }
+
+        return edges;
+    }
+
+    // Compare solutions
+    public static boolean compare(Slitherlink.Edge[] a, Slitherlink.Edge[] b) {
+        return Arrays.equals(a, b);
+    }
+
+}

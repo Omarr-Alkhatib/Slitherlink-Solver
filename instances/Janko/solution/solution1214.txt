@@ -1,0 +1,23 @@
+22 26
+x x - - - - - - - - - - x - - - - - - - - x x x x -
+- x x - x x - - x x - x x x x x x - - - x x x x - -
+x x - - - x - x x - - - - x - - x - - - - - x x x -
+x x x - - x x x x - - - x x - - - - - - - - - - x x
+x - x x - x x x x - - - - x x - - - x x - - x - x x
+- - x - - - x x x - x - - x x x - x x - - x x x x -
+- x x x x x x x x x x x - x x x x x x x - - x - - -
+x x x - - - x - x x x - - x - x x x x - - - x - x -
+x x x x - - - - - x - - - x - - x - x - - x x x x x
+- x - - - x x - x x x - x x - - - - - - - - x - - -
+x x x - x x x - - x - - x x - - x - x - x - x - x -
+- x - - - x x x - x - x x - - x x x x x x x x x x x
+x x x - x x x - - - - - x - x x x x x - x - - - x -
+- x x x x x x x - - - - x x x x - x - - - - - - - -
+- - x - x x x x x - x - x x x - - - - x x x - x x x
+- - - - - - x x x x x x x - - - - - - - x - - - x -
+x x - - - x x x x x x - x x - - x - - x x x - - x x
+x x x x x x x - - x - - x x - x x x - - - x x x x x
+- x - - - - - - x x x - - x x x x x x - x x - - - x
+x x - x - - x - - x - - - x x x - x x - x - - - x x
+- x x x x x x - - x - - - x x x - x x x x x - x x x
+x x - x - - x - x x x - - x x - - - x x x - - - x x

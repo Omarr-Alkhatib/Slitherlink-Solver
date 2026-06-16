@@ -1,0 +1,19 @@
+18 18
+- - x x x x - - - x - - x x x x x x
+- - - x x x x - x x - x x x x - - x
+x - - - - x x x x x - x x x - - - -
+x x - - - - x x - x - - x x x - - x
+x x - - - - x x - x - - x x x - x x
+x x x - - x x x - - - x x x - - - x
+- x x x x x x - - - - x x x - - - x
+- - x x x x - - - - - - x x - - x x
+- x x - - - - x x x x x x x x x x -
+x x x x x x x x x x x - - - - x x x
+x x - - x x - - - - - - x x x x - -
+x x x - x x x - - - - x x x x - - -
+x x x - x x x - - - x x x - - - - x
+x x - - - x - - x - x x - - - - x x
+- - - - - x - - x - x x - - - - x x
+- - - - x x x - x x x x x - - x x x
+x - - x x x x - x x - x x x x x x -
+x x x x x x - - - x - - x x x x - -
