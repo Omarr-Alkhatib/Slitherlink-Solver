@@ -102,7 +102,7 @@ public class SolverCPVerifier {
             edges[e] = model.newBoolVar("Edge_" + e);
         }
 
-        // 4 or more edges are required to form a loop and avoid empty solutions
+        // 1 or more edges are required to form a loop and avoid empty solutions
         model.addGreaterOrEqual(LinearExpr.sum(edges), 1);
 
 

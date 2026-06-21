@@ -41,8 +41,7 @@ public class Benchmark {
         List<Long> sorted = new ArrayList<>(values);
         Collections.sort(sorted);
 
-        int index =
-                (int) Math.ceil((p / 100.0) * sorted.size()) - 1;
+        int index = (int) Math.ceil((p / 100.0) * sorted.size()) - 1;
 
         index = Math.max(0, Math.min(index, sorted.size() - 1));
 
@@ -144,8 +143,7 @@ public class Benchmark {
 
             String id = String.format("%04d", i);
 
-            Slitherlink puzzle =
-                    Utils.loadInstance(folder + "/janko" + id + ".txt");
+            Slitherlink puzzle = Utils.loadInstance(folder + "/janko" + id + ".txt");
 
             SolverDS dsSolver = null;
 

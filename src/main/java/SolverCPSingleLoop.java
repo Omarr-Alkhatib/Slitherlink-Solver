@@ -106,7 +106,6 @@ public class SolverCPSingleLoop {
             model.addEquality(builder.build(), 0).onlyEnforceIf(deg_pos[i]);
 
 
-
             // variable for numbering the vertices
             x[i] = model.newIntVar(0, deg.length, "x_" + i);
 
@@ -126,6 +125,7 @@ public class SolverCPSingleLoop {
 
         // sum of all x_one is 1, i.e. there is one starting node, or one loop
         model.addEquality(LinearExpr.sum(sum_x_one.toArray(new BoolVar[0])), 1);
+
 
         // comparison of each vertex with its neighbors using x
         for (int e = 0; e < edges.length; e++) {

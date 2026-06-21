@@ -6,6 +6,7 @@ import java.util.*;
 
 public class Utils {
 
+    // read instances from a folder
     public static List<Path> listInstanceFiles(String folder) throws IOException {
 
         List<Path> files = new ArrayList<>();

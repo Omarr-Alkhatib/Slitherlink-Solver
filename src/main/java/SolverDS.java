@@ -89,7 +89,6 @@ public class SolverDS {
                 board.setEdge(e, Slitherlink.Edge.OFF);
 
                 metrics.V++;
-
                 metrics.S += simplify(board);
 
                 //board.print();
@@ -147,7 +146,6 @@ public class SolverDS {
                 board.setEdge(e, Slitherlink.Edge.ON);
 
                 metrics.V++;
-
                 metrics.S += simplify(board);
 
 
@@ -171,6 +169,7 @@ public class SolverDS {
                     // copy the result state to the original puzzle and return
                     board.copyState(copy2);
 
+                    // avoid duplicate counting of updates
                     if (!contra1) {
                         metrics.V++;
                         metrics.S += simplifyEdges2;
@@ -209,7 +208,6 @@ public class SolverDS {
         }
 
         metrics.A += changes;
-
         metrics.S += simplify(board);
 
         if (changes > 0) {

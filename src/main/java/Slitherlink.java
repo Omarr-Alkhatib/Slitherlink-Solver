@@ -273,8 +273,10 @@ public class Slitherlink {
                 else if (edges[e] == Edge.OFF) off++;
             }
 
+            // contradiction checks
             if (on > 2) contradictionVertex = true;
             if (on == 1 && off == 3) contradictionVertex = true;
+
 
             if (off == 3 || on == 2){
                 for (int e : vertexEdges[i]) {
@@ -308,7 +310,9 @@ public class Slitherlink {
                 else if (edges[e] == Edge.OFF) off++;
             }
 
+            // contradiction checks
             if (on > clue[i] || off > 4 - clue[i]) contradictionClue = true;
+
 
             if (on == clue[i]){
                 for (int e : clueEdges[i]) {
@@ -655,6 +659,7 @@ public class Slitherlink {
 
         boolean ruleValid = false;
 
+        // edge case: rule does not apply if the puzzle has only 3s and 0s
         for (int c : clue)
             if (c == 1 || c == 2) {
                 ruleValid = true;

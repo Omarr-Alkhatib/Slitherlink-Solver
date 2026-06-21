@@ -59,6 +59,7 @@ public class SolverCPLazy {
                 }
             }
 
+            // test loop edges in a copy board
             Slitherlink test = new Slitherlink(puzzle.h, puzzle.w, puzzle.clue);
             Arrays.fill(test.edges, Slitherlink.Edge.OFF);
 
